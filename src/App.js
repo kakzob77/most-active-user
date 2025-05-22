@@ -10,8 +10,12 @@ const API_KEY = "E9104B82-F97B-4D27-BEDE-04D10724B1B1";
 async function fetchMostActiveUsers(since) {
   try {
     const response = await axios.get(
-      `https://api.neynar.com/v1/farcaster/casts?limit=500&timestamp=${since}`,
-      { headers: { api_key: API_KEY } }
+      `https://api.neynar.com/v1/farcaster/casts?limit=500&timestamp=${since}`, 
+      {
+        headers: {
+          api_key: API_KEY 
+        }
+      }
     );
 
     if (!response.data || !response.data.casts) {
@@ -22,8 +26,8 @@ async function fetchMostActiveUsers(since) {
     const users = {};
     response.data.casts.forEach((cast) => {
       const fid = cast.author.fid;
-      const username = cast.author.username;
-      const avatar = cast.author.pfp_url;
+      const username = cast.author.username || "Unknown";
+      const avatar = cast.author.pfp_url || "";
 
       if (!users[fid]) {
         users[fid] = { fid, name: username, avatar, casts: 0 };
@@ -35,14 +39,14 @@ async function fetchMostActiveUsers(since) {
       .sort((a, b) => b.casts - a.casts)
       .slice(0, 100);
   } catch (error) {
-    console.error("Fetch error:", error);
+    console.error("Fetch error:", error.response?.status, error.message);
     return [];
   }
 }
 
 function exportToCSV(users) {
   const headers = ["Rank", "Username", "Casts"];
-  const rows = users.map((user, idx) => [idx + 1, user.name, user.casts]);
+  const rows = users.map((user, idx) => [idx + 1, user.name || "Unknown", user.casts || 0]);
   let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
   rows.forEach((row) => {
     csvContent += row.join(",") + "\n";
@@ -51,7 +55,7 @@ function exportToCSV(users) {
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement("a");
   link.setAttribute("href", encodedUri);
-  link.setAttribute("download", "top_100_farcaster_users.csv");
+  link.setAttribute("download", `top_100_farcaster_users_${new Date().toISOString().split('T')[0]}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -75,9 +79,10 @@ export default function App() {
 
     fetchMostActiveUsers(since).then((data) => {
       if (data.length === 0) {
-        setError("No data found or API failed.");
+        setError("Tidak ada data pengguna aktif atau API gagal. Periksa konsol untuk detail.");
+      } else {
+        setUsers(data);
       }
-      setUsers(data);
       setLoading(false);
     });
   }, [filter]);
@@ -97,7 +102,7 @@ export default function App() {
         <button onClick={() => setFilter("7d")} style={{ marginRight: 10 }}>
           Last 7 Days
         </button>
-        <button onClick={() => exportToCSV(users)}>
+        <button onClick={() => exportToCSV(users)} disabled={users.length === 0}>
           Export CSV
         </button>
       </div>
@@ -134,18 +139,19 @@ export default function App() {
                 alignItems: "center"
               }}>
                 <img
-                  src={user.avatar}
-                  alt={user.name}
+                  src={user.avatar || "https://via.placeholder.com/40"}
+                  alt={user.name || "Unknown"}
                   style={{
                     width: 40,
                     height: 40,
                     borderRadius: "50%",
                     marginRight: 10
                   }}
+                  onError={(e) => { e.target.src = "https://via.placeholder.com/40"; }}
                 />
                 <div>
-                  <strong>{idx + 1}. {user.name}</strong>
-                  <div>Casts: {user.casts}</div>
+                  <strong>{idx + 1}. {user.name || "Unknown"}</strong>
+                  <div>Casts: {user.casts || 0}</div>
                 </div>
               </div>
             ))}
