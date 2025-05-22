@@ -1,34 +1,52 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, CartesianGrid
+} from "recharts";
 
 const API_KEY = "E9104B82-F97B-4D27-BEDE-04D10724B1B1";
 
 async function fetchMostActiveUsers(since) {
-  const response = await axios.get(`https://api.neynar.com/v1/farcaster/casts?limit=500&timestamp=${since}`, {
-    headers: { "api_key": API_KEY },
-  });
+  try {
+    const response = await axios.get(
+      `https://api.neynar.com/v1/farcaster/casts?limit=500&timestamp=${since}`,
+      { headers: { api_key: API_KEY } }
+    );
 
-  const users = {};
-  response.data.casts.forEach(cast => {
-    const fid = cast.author.fid;
-    const username = cast.author.username;
-    const avatar = cast.author.pfp_url;
-
-    if (!users[fid]) {
-      users[fid] = { fid, name: username, avatar, casts: 0 };
+    if (!response.data || !response.data.casts) {
+      console.error("No casts in response:", response.data);
+      return [];
     }
-    users[fid].casts += 1;
-  });
 
-  return Object.values(users).sort((a, b) => b.casts - a.casts).slice(0, 100);
+    const users = {};
+    response.data.casts.forEach((cast) => {
+      const fid = cast.author.fid;
+      const username = cast.author.username;
+      const avatar = cast.author.pfp_url;
+
+      if (!users[fid]) {
+        users[fid] = { fid, name: username, avatar, casts: 0 };
+      }
+      users[fid].casts += 1;
+    });
+
+    return Object.values(users)
+      .sort((a, b) => b.casts - a.casts)
+      .slice(0, 100);
+  } catch (error) {
+    console.error("Fetch error:", error);
+    return [];
+  }
 }
 
 function exportToCSV(users) {
   const headers = ["Rank", "Username", "Casts"];
   const rows = users.map((user, idx) => [idx + 1, user.name, user.casts]);
   let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
-  rows.forEach(row => { csvContent += row.join(",") + "\n"; });
+  rows.forEach((row) => {
+    csvContent += row.join(",") + "\n";
+  });
 
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement("a");
@@ -43,20 +61,34 @@ export default function App() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("24h");
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    setLoading(true);
     const now = Date.now();
-    const since = filter === "24h" ? now - 24 * 60 * 60 * 1000 : now - 7 * 24 * 60 * 60 * 1000;
+    const since = filter === "24h"
+      ? now - 24 * 60 * 60 * 1000
+      : now - 7 * 24 * 60 * 60 * 1000;
 
-    fetchMostActiveUsers(since).then(data => {
+    console.log("Fetching with timestamp:", since);
+    setLoading(true);
+    setError(null);
+
+    fetchMostActiveUsers(since).then((data) => {
+      if (data.length === 0) {
+        setError("No data found or API failed.");
+      }
       setUsers(data);
       setLoading(false);
     });
   }, [filter]);
 
   return (
-    <div style={{ padding: 20, backgroundColor: "#121212", minHeight: "100vh", color: "#fff" }}>
+    <div style={{
+      padding: 20,
+      backgroundColor: "#121212",
+      minHeight: "100vh",
+      color: "#fff"
+    }}>
       <h1>Top 100 Most Active Users on Farcaster</h1>
       <div style={{ marginBottom: 20 }}>
         <button onClick={() => setFilter("24h")} style={{ marginRight: 10 }}>
@@ -72,6 +104,8 @@ export default function App() {
 
       {loading ? (
         <p>Loading...</p>
+      ) : error ? (
+        <p style={{ color: "red" }}>{error}</p>
       ) : (
         <>
           <div style={{ height: 300, marginBottom: 40 }}>
@@ -86,10 +120,29 @@ export default function App() {
             </ResponsiveContainer>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 20 }}>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))",
+            gap: 20
+          }}>
             {users.map((user, idx) => (
-              <div key={idx} style={{ background: "#222", padding: 10, borderRadius: 12, display: "flex", alignItems: "center" }}>
-                <img src={user.avatar} alt={user.name} style={{ width: 40, height: 40, borderRadius: "50%", marginRight: 10 }} />
+              <div key={idx} style={{
+                background: "#222",
+                padding: 10,
+                borderRadius: 12,
+                display: "flex",
+                alignItems: "center"
+              }}>
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    marginRight: 10
+                  }}
+                />
                 <div>
                   <strong>{idx + 1}. {user.name}</strong>
                   <div>Casts: {user.casts}</div>
