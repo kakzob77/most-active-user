@@ -13,7 +13,7 @@ async function fetchMostActiveUsers(since) {
       `https://api.neynar.com/v1/farcaster/casts?limit=500&timestamp=${since}`, 
       {
         headers: {
-          api_key: API_KEY 
+          api_key: E9104B82-F97B-4D27-BEDE-04D10724B1B1 
         }
       }
     );
