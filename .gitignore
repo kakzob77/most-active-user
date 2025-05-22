@@ -1,3 +1,4 @@
 node_modules
 build
 .env
+.env.local FARCASTER_API_KEY=E9104B82-F97B-4D27-BEDE-04D10724B1B1
