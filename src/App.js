@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
-const API_KEY = process.env.REACT_APP_NEYNAR_KEY;
+const API_KEY = "E9104B82-F97B-4D27-BEDE-04D10724B1B1";
 
 async function fetchMostActiveUsers(since) {
   const response = await axios.get(`https://api.neynar.com/v1/farcaster/casts?limit=500&timestamp=${since}`, {
