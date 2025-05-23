@@ -6,7 +6,7 @@ import {
 } from "recharts";
 
 // Menggunakan kunci API yang kamu berikan
-const API_KEY = "13e4ef17-7918-4d25-99f4-72f3b0424267";
+const API_KEY = "01D14113-71B5-4197-A2B3-C531AA648E15";
 
 async function fetchMostActiveUsers(since) {
   try {
@@ -17,7 +17,7 @@ async function fetchMostActiveUsers(since) {
 
     // Ambil semua casts dengan pagination
     do {
-      const url = `https://api.neynar.com/v1/farcaster/casts?limit=500${cursor ? `&cursor=${cursor}` : ''}`;
+      const url = `https://api.neynar.com/v2/farcaster/casts?limit=100${cursor ? `&cursor=${cursor}` : ''}`;
       const response = await axios.get(url, {
         headers: {
           api_key: API_KEY
@@ -35,15 +35,21 @@ async function fetchMostActiveUsers(since) {
       cursor = response.data.next?.cursor || null;
     } while (cursor);
 
-    // Filter casts berdasarkan waktu (since)
+    // Log semua casts sebelum filtering
+    console.log("All casts fetched:", allCasts);
+
+    // Filter casts berdasarkan waktu (since) - Sementara hapus untuk tes
+    const filteredCasts = allCasts; // Hapus filter waktu untuk memastikan data ada
+    /*
     const filteredCasts = allCasts.filter(cast => {
       const castTimestamp = new Date(cast.created_at || cast.timestamp || 0).getTime();
       console.log("Filtering cast:", cast.created_at, "Timestamp:", castTimestamp, "Since:", since);
       return castTimestamp >= since;
     });
+    */
 
     if (filteredCasts.length === 0) {
-      console.error("No casts found for the given timeframe after filtering.");
+      console.error("No casts found after fetching.");
       return [];
     }
 
@@ -123,7 +129,7 @@ export default function App() {
     }}>
       <h1>Top 100 Most Active Users on Farcaster</h1>
       <div style={{ marginBottom: 20 }}>
-        <button onClick={() => setFilter("24h")} style={{ marginRight: 10 }}>
+        <button onClick={() => setFilter("24h")} style={{ marginRight: 10}}>
           Last 24 Hours
         </button>
         <button onClick={() => setFilter("7d")} style={{ marginRight: 10}}>
