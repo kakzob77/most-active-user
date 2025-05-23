@@ -5,7 +5,6 @@ import {
   ResponsiveContainer, CartesianGrid
 } from "recharts";
 
-// Menggunakan kunci API yang kamu berikan
 const API_KEY = "01D14113-71B5-4197-A2B3-C531AA648E15";
 
 async function fetchMostActiveUsers(since) {
@@ -15,16 +14,16 @@ async function fetchMostActiveUsers(since) {
 
     console.log("Attempting to fetch casts with API Key:", API_KEY);
 
-    // Ambil semua casts dengan pagination
+    // Ganti endpoint ke yang mungkin gratis
     do {
-      const url = `https://api.neynar.com/v2/farcaster/casts?limit=100${cursor ? `&cursor=${cursor}` : ''}`;
+      const url = `https://api.neynar.com/v2/farcaster/feed/recent?limit=100${cursor ? `&cursor=${cursor}` : ''}`;
       const response = await axios.get(url, {
         headers: {
           api_key: API_KEY
         }
       });
 
-      console.log("Raw API response:", response.data); // Log respons mentah
+      console.log("Raw API response:", response.data);
 
       if (!response.data || !response.data.casts) {
         console.error("No casts in response:", response.data);
@@ -35,18 +34,9 @@ async function fetchMostActiveUsers(since) {
       cursor = response.data.next?.cursor || null;
     } while (cursor);
 
-    // Log semua casts sebelum filtering
     console.log("All casts fetched:", allCasts);
 
-    // Filter casts berdasarkan waktu (since) - Sementara hapus untuk tes
-    const filteredCasts = allCasts; // Hapus filter waktu untuk memastikan data ada
-    /*
-    const filteredCasts = allCasts.filter(cast => {
-      const castTimestamp = new Date(cast.created_at || cast.timestamp || 0).getTime();
-      console.log("Filtering cast:", cast.created_at, "Timestamp:", castTimestamp, "Since:", since);
-      return castTimestamp >= since;
-    });
-    */
+    const filteredCasts = allCasts;
 
     if (filteredCasts.length === 0) {
       console.error("No casts found after fetching.");
@@ -129,10 +119,10 @@ export default function App() {
     }}>
       <h1>Top 100 Most Active Users on Farcaster</h1>
       <div style={{ marginBottom: 20 }}>
-        <button onClick={() => setFilter("24h")} style={{ marginRight: 10}}>
+        <button onClick={() => setFilter("24h")} style={{ marginRight: 10 }}>
           Last 24 Hours
         </button>
-        <button onClick={() => setFilter("7d")} style={{ marginRight: 10}}>
+        <button onClick={() => setFilter("7d")} style={{ marginRight: 10 }}>
           Last 7 Days
         </button>
         <button onClick={() => exportToCSV(users)} disabled={users.length === 0}>
