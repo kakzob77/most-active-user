@@ -5,29 +5,50 @@ import {
   ResponsiveContainer, CartesianGrid
 } from "recharts";
 
+// Menggunakan kunci API yang kamu berikan
 const API_KEY = "E9104B82-F97B-4D27-BEDE-04D10724B1B1";
 
 async function fetchMostActiveUsers(since) {
   try {
-    const response = await axios.get(
-      `https://api.neynar.com/v1/farcaster/casts?limit=500&timestamp=${since}`, 
-      {
-        headers: {
-          api_key: E9104B82-F97B-4D27-BEDE-04D10724B1B1 
-        }
-      }
-    );
+    let allCasts = [];
+    let cursor = null;
 
-    if (!response.data || !response.data.casts) {
-      console.error("No casts in response:", response.data);
+    // Ambil semua casts dengan pagination
+    do {
+      const url = `https://api.neynar.com/v1/farcaster/casts?limit=500${cursor ? `&cursor=${cursor}` : ''}`;
+      const response = await axios.get(url, {
+        headers: {
+          api_key: API_KEY
+        }
+      });
+
+      if (!response.data || !response.data.casts) {
+        console.error("No casts in response:", response.data);
+        break;
+      }
+
+      allCasts = [...allCasts, ...response.data.casts];
+      cursor = response.data.next?.cursor || null;
+    } while (cursor);
+
+    // Filter casts berdasarkan waktu (since)
+    const filteredCasts = allCasts.filter(cast => {
+      const castTimestamp = new Date(cast.created_at).getTime();
+      return castTimestamp >= since;
+    });
+
+    if (filteredCasts.length === 0) {
+      console.error("No casts found for the given timeframe after filtering.");
       return [];
     }
 
     const users = {};
-    response.data.casts.forEach((cast) => {
-      const fid = cast.author.fid;
-      const username = cast.author.username || "Unknown";
-      const avatar = cast.author.pfp_url || "";
+    filteredCasts.forEach((cast) => {
+      const fid = cast.author?.fid;
+      const username = cast.author?.username || "Unknown";
+      const avatar = cast.author?.pfp_url || "";
+
+      if (!fid) return;
 
       if (!users[fid]) {
         users[fid] = { fid, name: username, avatar, casts: 0 };
@@ -73,7 +94,7 @@ export default function App() {
       ? now - 24 * 60 * 60 * 1000
       : now - 7 * 24 * 60 * 60 * 1000;
 
-    console.log("Fetching with timestamp:", since);
+    console.log("Fetching with timestamp (since):", since);
     setLoading(true);
     setError(null);
 
