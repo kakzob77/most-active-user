@@ -14,7 +14,7 @@ async function fetchMostActiveUsers(since) {
 
     console.log("Attempting to fetch casts with API Key:", API_KEY);
 
-    // Ganti endpoint ke yang mungkin gratis
+    // Ambil casts dari endpoint /v2/farcaster/feed/recent
     do {
       const url = `https://api.neynar.com/v2/farcaster/feed/recent?limit=100${cursor ? `&cursor=${cursor}` : ''}`;
       const response = await axios.get(url, {
@@ -36,6 +36,7 @@ async function fetchMostActiveUsers(since) {
 
     console.log("All casts fetched:", allCasts);
 
+    // Sementara hapus filter waktu
     const filteredCasts = allCasts;
 
     if (filteredCasts.length === 0) {
