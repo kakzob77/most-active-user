@@ -6,12 +6,14 @@ import {
 } from "recharts";
 
 // Menggunakan kunci API yang kamu berikan
-const API_KEY = "E9104B82-F97B-4D27-BEDE-04D10724B1B1";
+const API_KEY = "13e4ef17-7918-4d25-99f4-72f3b0424267";
 
 async function fetchMostActiveUsers(since) {
   try {
     let allCasts = [];
     let cursor = null;
+
+    console.log("Attempting to fetch casts with API Key:", API_KEY);
 
     // Ambil semua casts dengan pagination
     do {
@@ -21,6 +23,8 @@ async function fetchMostActiveUsers(since) {
           api_key: API_KEY
         }
       });
+
+      console.log("Raw API response:", response.data); // Log respons mentah
 
       if (!response.data || !response.data.casts) {
         console.error("No casts in response:", response.data);
@@ -33,7 +37,8 @@ async function fetchMostActiveUsers(since) {
 
     // Filter casts berdasarkan waktu (since)
     const filteredCasts = allCasts.filter(cast => {
-      const castTimestamp = new Date(cast.created_at).getTime();
+      const castTimestamp = new Date(cast.created_at || cast.timestamp || 0).getTime();
+      console.log("Filtering cast:", cast.created_at, "Timestamp:", castTimestamp, "Since:", since);
       return castTimestamp >= since;
     });
 
@@ -56,11 +61,12 @@ async function fetchMostActiveUsers(since) {
       users[fid].casts += 1;
     });
 
+    console.log("Processed users:", Object.values(users));
     return Object.values(users)
       .sort((a, b) => b.casts - a.casts)
       .slice(0, 100);
   } catch (error) {
-    console.error("Fetch error:", error.response?.status, error.message);
+    console.error("Fetch error:", error.response?.status, error.message, error.response?.data);
     return [];
   }
 }
@@ -120,7 +126,7 @@ export default function App() {
         <button onClick={() => setFilter("24h")} style={{ marginRight: 10 }}>
           Last 24 Hours
         </button>
-        <button onClick={() => setFilter("7d")} style={{ marginRight: 10 }}>
+        <button onClick={() => setFilter("7d")} style={{ marginRight: 10}}>
           Last 7 Days
         </button>
         <button onClick={() => exportToCSV(users)} disabled={users.length === 0}>
